@@ -1188,3 +1188,284 @@ game.Lighting.ClockTime = 6
 
 -- Sunset
 game.Lighting.ClockTime = 18
+
+
+TWEENING (SMOOTH MOVEMENT)
+Tweening = Moving smoothly from point A to point B (not instant teleport)
+local TweenService = game:GetService("TweenService")
+
+-- Basic tween to a position
+local targetPosition = CFrame.new(0, 50, 0) -- Where you want to go
+
+local tweenInfo = TweenInfo.new(
+    2, -- Time (2 seconds)
+    Enum.EasingStyle.Linear, -- Style (Linear = constant speed)
+    Enum.EasingDirection.Out -- Direction
+)
+
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetPosition})
+tween:Play()
+SIMPLE VERSION:
+local TweenService = game:GetService("TweenService")
+
+-- Tween to position (X, Y, Z)
+local goal = {CFrame = CFrame.new(100, 10, 50)}
+local tweenInfo = TweenInfo.new(2) -- 2 seconds
+local tween = TweenService:Create(hrp, tweenInfo, goal)
+tween:Play()
+TWEEN TO ANOTHER PLAYER
+local TweenService = game:GetService("TweenService")
+
+-- Find player
+local target = game.Players:FindFirstChild("Username")
+
+if target and target.Character then
+    local targetPos = target.Character.HumanoidRootPart.CFrame
+    
+    -- Tween to them smoothly
+    local tweenInfo = TweenInfo.new(1) -- 1 second
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetPos})
+    tween:Play()
+end
+TWEEN TO NEAREST PLAYER
+local TweenService = game:GetService("TweenService")
+
+-- Get nearest player
+local function GetNearest()
+    local nearest = nil
+    local shortestDist = math.huge
+    
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+            if dist < shortestDist then
+                shortestDist = dist
+                nearest = plr
+            end
+        end
+    end
+    
+    return nearest
+end
+
+-- Tween to nearest
+local nearest = GetNearest()
+if nearest then
+    local tweenInfo = TweenInfo.new(1.5) -- 1.5 seconds
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = nearest.Character.HumanoidRootPart.CFrame})
+    tween:Play()
+end
+TWEEN SPEED (FAST/SLOW)
+local TweenService = game:GetService("TweenService")
+
+-- FAST tween (0.5 seconds)
+local tweenInfo = TweenInfo.new(0.5)
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+
+-- SLOW tween (5 seconds)
+local tweenInfo = TweenInfo.new(5)
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+DIFFERENT TWEEN STYLES
+local TweenService = game:GetService("TweenService")
+
+-- Linear = constant speed (straight line)
+local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear)
+
+-- Quad = slow start, fast end (smooth acceleration)
+local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad)
+
+-- Bounce = bounces at the end
+local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Bounce)
+
+-- Elastic = springy movement
+local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Elastic)
+
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+WAIT FOR TWEEN TO FINISH
+local TweenService = game:GetService("TweenService")
+
+local tweenInfo = TweenInfo.new(2)
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+
+tween.Completed:Wait() -- Wait until tween is done
+print("Tween finished!")
+LOOP TWEEN TO ALL PLAYERS
+local TweenService = game:GetService("TweenService")
+
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+        local tweenInfo = TweenInfo.new(1)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = plr.Character.HumanoidRootPart.CFrame})
+        tween:Play()
+        tween.Completed:Wait() -- Wait for this tween to finish before next
+        wait(0.5) -- Small delay
+    end
+end
+TWEEN WITH OFFSET
+local TweenService = game:GetService("TweenService")
+
+-- Tween to player but 5 studs away
+local target = game.Players:FindFirstChild("Username")
+
+if target and target.Character then
+    local targetPos = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5) -- 5 studs in front
+    
+    local tweenInfo = TweenInfo.new(1)
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetPos})
+    tween:Play()
+end
+CFRAME BASICS
+CFrame = Position + Rotation
+-- Just position
+local pos = CFrame.new(10, 20, 30) -- X, Y, Z
+
+-- Position with rotation
+local pos = CFrame.new(10, 20, 30) * CFrame.Angles(0, math.rad(90), 0) -- Turn 90 degrees
+
+-- Move forward 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(0, 0, -5)
+
+-- Move backward 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(0, 0, 5)
+
+-- Move left 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(-5, 0, 0)
+
+-- Move right 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(5, 0, 0)
+
+-- Move up 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(0, 5, 0)
+
+-- Move down 5 studs
+hrp.CFrame = hrp.CFrame * CFrame.new(0, -5, 0)
+ROTATE CHARACTER
+-- Turn 90 degrees to the right
+hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(90), 0)
+
+-- Turn 180 degrees (turn around)
+hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(180), 0)
+
+-- Face a player
+local target = game.Players:FindFirstChild("Username")
+if target and target.Character then
+    hrp.CFrame = CFrame.new(hrp.Position, target.Character.HumanoidRootPart.Position)
+end
+VECTOR3 BASICS
+Vector3 = 3D Position (X, Y, Z)
+-- Create position
+local pos = Vector3.new(10, 20, 30)
+
+-- Get distance between two positions
+local pos1 = Vector3.new(0, 0, 0)
+local pos2 = Vector3.new(10, 0, 0)
+local distance = (pos1 - pos2).Magnitude
+print("Distance: " .. distance) -- 10 studs
+
+-- Move position
+local newPos = pos + Vector3.new(5, 0, 0) -- Move 5 studs right
+GET PLAYER POSITION
+-- Your position
+local myPos = hrp.Position
+print(myPos.X, myPos.Y, myPos.Z)
+
+-- Another player's position
+local target = game.Players:FindFirstChild("Username")
+if target and target.Character then
+    local targetPos = target.Character.HumanoidRootPart.Position
+    print(targetPos)
+end
+CHECK DISTANCE TO PLAYER
+local target = game.Players:FindFirstChild("Username")
+
+if target and target.Character then
+    local distance = (hrp.Position - target.Character.HumanoidRootPart.Position).Magnitude
+    print("Distance: " .. math.floor(distance) .. " studs")
+    
+    if distance < 10 then
+        print("Very close!")
+    elseif distance < 50 then
+        print("Medium distance")
+    else
+        print("Far away")
+    end
+end
+TWEEN MULTIPLE THINGS AT ONCE
+local TweenService = game:GetService("TweenService")
+
+-- Tween position AND speed at same time
+local tweenInfo = TweenInfo.new(2)
+
+-- Tween character position
+local tween1 = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+
+-- Tween speed
+local tween2 = TweenService:Create(humanoid, tweenInfo, {WalkSpeed = 100})
+
+tween1:Play()
+tween2:Play()
+TWEEN GUI (BONUS)
+local TweenService = game:GetService("TweenService")
+
+-- Make GUI bigger smoothly
+local frame = script.Parent -- Your GUI frame
+
+local tweenInfo = TweenInfo.new(1)
+local tween = TweenService:Create(frame, tweenInfo, {Size = UDim2.new(0, 300, 0, 300)})
+tween:Play()
+
+-- Move GUI position
+local tween = TweenService:Create(frame, tweenInfo, {Position = UDim2.new(0.5, 0, 0.5, 0)})
+tween:Play()
+CANCEL/STOP TWEEN
+local TweenService = game:GetService("TweenService")
+
+local tweenInfo = TweenInfo.new(5) -- 5 second tween
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+
+wait(2) -- Wait 2 seconds
+
+tween:Cancel() -- Stop the tween
+print("Tween stopped!")
+REPEAT TWEEN (LOOP BACK AND FORTH)
+local TweenService = game:GetService("TweenService")
+
+local tweenInfo = TweenInfo.new(
+    2, -- Time
+    Enum.EasingStyle.Linear,
+    Enum.EasingDirection.Out,
+    -1, -- -1 = repeat forever
+    true -- true = reverse (go back and forth)
+)
+
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
+SIMPLE AUTO FARM WITH TWEEN
+local TweenService = game:GetService("TweenService")
+
+-- Farm all coins
+for _, coin in pairs(workspace:GetDescendants()) do
+    if coin.Name == "Coin" and coin:IsA("BasePart") then
+        -- Tween to coin
+        local tweenInfo = TweenInfo.new(0.5)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+        tween:Play()
+        tween.Completed:Wait()
+        
+        wait(0.1) -- Small delay before next coin
+    end
+end
+TWEEN COMPARISON
+-- INSTANT TELEPORT (no tween)
+hrp.CFrame = CFrame.new(0, 50, 0)
+
+-- SLOW TWEEN (smooth)
+local TweenService = game:GetService("TweenService")
+local tweenInfo = TweenInfo.new(2)
+local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
+tween:Play()
