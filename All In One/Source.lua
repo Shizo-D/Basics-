@@ -549,3 +549,271 @@ end;
 
 -- Main
 RunService.RenderStepped:Connect(BoxEsp);
+
+
+CAMERA TRICKS
+local camera = workspace.CurrentCamera
+
+-- Zoom out FAR
+camera.FieldOfView = 120 -- Default is 70
+
+-- Lock to first person
+player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+-- Unlock camera
+player.CameraMode = Enum.CameraMode.Classic
+
+-- Remove zoom limit
+player.CameraMaxZoomDistance = 9999
+player.CameraMinZoomDistance = 0
+ANIMATIONS
+-- Stop ALL animations (good for bypassing some stuff)
+for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+    track:Stop()
+end
+
+-- Play custom animation
+local anim = Instance.new("Animation")
+anim.AnimationId = "rbxassetid://123456789" -- Animation ID
+local track = humanoid:LoadAnimation(anim)
+track:Play()
+PLATFORM/PART UNDER YOU
+-- Create invisible platform under you
+local platform = Instance.new("Part")
+platform.Size = Vector3.new(10, 1, 10)
+platform.Anchored = true
+platform.Transparency = 1
+platform.CanCollide = true
+platform.Parent = workspace
+
+-- Keep it under you
+spawn(function()
+    while wait() do
+        if character and hrp then
+            platform.CFrame = hrp.CFrame * CFrame.new(0, -3, 0)
+        end
+    end
+end)
+CHECKING GAME NAME
+-- Know what game you're in
+local gameId = game.PlaceId
+print("Game ID: " .. gameId)
+
+-- Check if specific game
+if game.PlaceId == 123456789 then
+    print("You're in that game!")
+end
+TEAM CHECKING
+-- Check your team
+if player.Team then
+    print("Your team: " .. player.Team.Name)
+end
+
+-- Check if same team as another player
+local otherPlayer = game.Players:FindFirstChild("Username")
+if otherPlayer and player.Team == otherPlayer.Team then
+    print("Same team!")
+end
+RESPAWN YOURSELF
+-- Method 1
+player.Character:BreakJoints()
+
+-- Method 2
+humanoid.Health = 0
+
+-- Method 3
+player:LoadCharacter()
+TOOLS/ITEMS
+-- Get all tools in your backpack
+for _, tool in pairs(player.Backpack:GetChildren()) do
+    print(tool.Name)
+end
+
+-- Equip a tool
+local tool = player.Backpack:FindFirstChild("ToolName")
+if tool then
+    humanoid:EquipTool(tool)
+end
+
+-- Unequip all tools
+humanoid:UnequipTools()
+
+-- Delete all your tools
+for _, tool in pairs(player.Backpack:GetChildren()) do
+    tool:Destroy()
+end
+FLING PLAYERS (PHYSICS)
+-- Fling someone (works in some games)
+local target = game.Players:FindFirstChild("Username")
+
+if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+    local targetHRP = target.Character.HumanoidRootPart
+    
+    -- Save your position
+    local oldPos = hrp.CFrame
+    
+    -- Go to them fast
+    hrp.CFrame = targetHRP.CFrame
+    wait(0.1)
+    
+    -- Create force
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 1000, 0)
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Parent = hrp
+    
+    wait(0.1)
+    bodyVelocity:Destroy()
+    
+    -- Go back
+    hrp.CFrame = oldPos
+end
+KICK YOURSELF (LEAVE GAME)
+player:Kick("Leaving game...")
+GET GAME STATS
+-- FPS
+local fps = workspace:GetRealPhysicsFPS()
+print("FPS: " .. math.floor(fps))
+
+-- Ping
+local ping = player:GetNetworkPing()
+print("Ping: " .. math.floor(ping * 1000) .. "ms")
+
+-- How many players
+local playerCount = #game.Players:GetPlayers()
+print("Players in game: " .. playerCount)
+TIME/DATE
+-- Current time in game
+local timeNow = tick()
+print(timeNow)
+
+-- Wait until specific time
+local targetTime = os.time() + 10 -- 10 seconds from now
+repeat wait() until os.time() >= targetTime
+print("10 seconds passed!")
+MAKE TRAILS BEHIND YOU
+local trail = Instance.new("Trail")
+local attachment0 = Instance.new("Attachment", hrp)
+local attachment1 = Instance.new("Attachment", hrp)
+
+attachment0.Position = Vector3.new(0, -2, 0)
+attachment1.Position = Vector3.new(0, 2, 0)
+
+trail.Attachment0 = attachment0
+trail.Attachment1 = attachment1
+trail.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
+trail.Lifetime = 1
+trail.Parent = hrp
+CHANGE YOUR NAME (CLIENT SIDE ONLY)
+-- Change your display name (only YOU see it)
+player.DisplayName = "New Name"
+player.Name = "New Name"
+SPAM JUMP
+spawn(function()
+    while wait(0.1) do
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+SPIN CHARACTER
+-- Spin yourself
+spawn(function()
+    while wait() do
+        hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(10), 0)
+    end
+end)
+AUTO CLICK (MOUSE)
+local mouse = player:GetMouse()
+
+spawn(function()
+    while wait(0.1) do
+        mouse1click() -- Auto clicks
+    end
+end)
+FULLBRIGHT (SEE IN DARK)
+-- Make everything bright
+game.Lighting.Brightness = 2
+game.Lighting.ClockTime = 12
+game.Lighting.FogEnd = 100000
+game.Lighting.GlobalShadows = false
+game.Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+X-RAY VISION (SEE THROUGH WALLS)
+-- Make all parts transparent
+for _, part in pairs(workspace:GetDescendants()) do
+    if part:IsA("BasePart") then
+        part.Transparency = 0.7
+    end
+end
+FIND SPECIFIC ITEMS
+-- Find all coins
+local coins = {}
+
+for _, item in pairs(workspace:GetDescendants()) do
+    if item.Name == "Coin" then
+        table.insert(coins, item)
+    end
+end
+
+print("Found " .. #coins .. " coins!")
+AUTO COLLECT ITEMS
+-- Collect all coins
+for _, coin in pairs(workspace:GetDescendants()) do
+    if coin.Name == "Coin" and coin:IsA("BasePart") then
+        -- Teleport coin to you
+        coin.CFrame = hrp.CFrame
+        wait(0.1)
+    end
+end
+FIRE TOUCH INTEREST (TOUCH PARTS)
+-- Touch a part without actually touching it
+local part = workspace.Coin
+
+firetouchinterest(hrp, part, 0) -- Start touch
+wait(0.1)
+firetouchinterest(hrp, part, 1) -- End touch
+CHAT COMMANDS
+player.Chatted:Connect(function(message)
+    if message == "/speed" then
+        humanoid.WalkSpeed = 100
+    elseif message == "/jump" then
+        humanoid.JumpPower = 200
+    elseif message == "/reset" then
+        humanoid.Health = 0
+    elseif message:sub(1, 3) == "/tp" then
+        local username = message:sub(5) -- Get name after "/tp "
+        local target = game.Players:FindFirstChild(username)
+        
+        if target and target.Character then
+            hrp.CFrame = target.Character.HumanoidRootPart.CFrame
+        end
+    end
+end)
+COPY CHARACTER APPEARANCE
+-- Copy someone's look
+local target = game.Players:FindFirstChild("Username")
+
+if target and target.Character then
+    for _, item in pairs(target.Character:GetChildren()) do
+        if item:IsA("Shirt") or item:IsA("Pants") or item:IsA("Accessory") then
+            item:Clone().Parent = character
+        end
+    end
+end
+REMOVE SPECIFIC PARTS
+-- Remove all invisible parts
+for _, part in pairs(workspace:GetDescendants()) do
+    if part:IsA("BasePart") and part.Transparency == 1 then
+        part:Destroy()
+    end
+end
+
+-- Remove all kill parts
+for _, part in pairs(workspace:GetDescendants()) do
+    if part.Name == "KillBrick" or part.Name == "Lava" then
+        part:Destroy()
+    end
+end
+LAG SWITCH (FREEZE EVERYONE)
+-- Warning: Can get you kicked!
+settings():GetService("NetworkSettings").IncomingReplicationLag = 1000
+wait(5)
+settings():GetService("NetworkSettings").IncomingReplicationLag = 0
