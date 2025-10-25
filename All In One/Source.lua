@@ -817,3 +817,374 @@ LAG SWITCH (FREEZE EVERYONE)
 settings():GetService("NetworkSettings").IncomingReplicationLag = 1000
 wait(5)
 settings():GetService("NetworkSettings").IncomingReplicationLag = 0
+
+
+HITBOX EXPANDER (MAKE PLAYERS BIGGER TO HIT)
+-- Make all players have HUGE hitboxes
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= game.Players.LocalPlayer and player.Character then
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Size = Vector3.new(20, 20, 20) -- HUGE
+            hrp.Transparency = 0.8
+            hrp.CanCollide = false
+        end
+    end
+end
+REMOVE DEATH BARRIERS
+-- Delete all kill parts
+for _, part in pairs(workspace:GetDescendants()) do
+    if part:IsA("BasePart") and part:FindFirstChild("TouchInterest") then
+        -- Check if it kills you
+        if part.Name:lower():find("kill") or 
+           part.Name:lower():find("death") or 
+           part.Name:lower():find("lava") or
+           part.Name:lower():find("void") then
+            part:Destroy()
+        end
+    end
+end
+SILENT AIM (AUTO AIM)
+-- Gets closest player for aiming
+local function GetClosestPlayerToMouse()
+    local closest = nil
+    local shortestDistance = math.huge
+    local mouse = player:GetMouse()
+    
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") then
+            local pos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(plr.Character.Head.Position)
+            
+            if onScreen then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
+                
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closest = plr
+                end
+            end
+        end
+    end
+    
+    return closest
+end
+HEALTH BAR ESP
+-- Show health bars above players
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Head") then
+        local head = plr.Character.Head
+        
+        local billboard = Instance.new("BillboardGui")
+        billboard.Parent = head
+        billboard.AlwaysOnTop = true
+        billboard.Size = UDim2.new(4, 0, 1, 0)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        
+        local frame = Instance.new("Frame")
+        frame.Parent = billboard
+        frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        frame.Size = UDim2.new(1, 0, 0.1, 0)
+        frame.BorderSizePixel = 0
+        
+        local text = Instance.new("TextLabel")
+        text.Parent = billboard
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.TextColor3 = Color3.fromRGB(255, 255, 255)
+        text.TextStrokeTransparency = 0
+        text.Font = Enum.Font.GothamBold
+        
+        -- Update health
+        spawn(function()
+            while plr.Character and wait(0.1) do
+                local hum = plr.Character:FindFirstChild("Humanoid")
+                if hum then
+                    text.Text = math.floor(hum.Health) .. " HP"
+                    frame.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 0.1, 0)
+                end
+            end
+        end)
+    end
+end
+WAYPOINT SYSTEM
+-- Save positions
+local waypoints = {}
+
+-- Save current position
+local function SaveWaypoint(name)
+    waypoints[name] = hrp.CFrame
+    print("Saved waypoint: " .. name)
+end
+
+-- Teleport to saved position
+local function GoToWaypoint(name)
+    if waypoints[name] then
+        hrp.CFrame = waypoints[name]
+        print("Teleported to: " .. name)
+    else
+        print("Waypoint not found!")
+    end
+end
+
+-- Usage:
+SaveWaypoint("spawn")
+SaveWaypoint("shop")
+GoToWaypoint("spawn")
+SPEED INDICATORS
+-- Show your current speed
+local speedLabel = Instance.new("ScreenGui")
+speedLabel.Parent = game.CoreGui
+
+local label = Instance.new("TextLabel")
+label.Parent = speedLabel
+label.Size = UDim2.new(0, 200, 0, 50)
+label.Position = UDim2.new(0.5, -100, 0, 10)
+label.BackgroundTransparency = 0.5
+label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.TextSize = 20
+label.Font = Enum.Font.GothamBold
+
+spawn(function()
+    while wait(0.1) do
+        if hrp then
+            local speed = hrp.Velocity.Magnitude
+            label.Text = "Speed: " .. math.floor(speed)
+        end
+    end
+end)
+FLY (BETTER VERSION)
+local flying = false
+local speed = 50
+local bodyVelocity
+local bodyGyro
+
+local function startFlying()
+    flying = true
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Parent = hrp
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.Parent = hrp
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.P = 9e4
+    
+    repeat wait()
+        local cam = workspace.CurrentCamera
+        local direction = Vector3.new(0, 0, 0)
+        
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + cam.CFrame.LookVector
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - cam.CFrame.LookVector
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - cam.CFrame.RightVector
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + cam.CFrame.RightVector
+        end
+        
+        bodyVelocity.Velocity = direction * speed
+        bodyGyro.CFrame = cam.CFrame
+    until not flying
+    
+    bodyVelocity:Destroy()
+    bodyGyro:Destroy()
+end
+
+-- Toggle with E
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E then
+        if flying then
+            flying = false
+        else
+            startFlying()
+        end
+    end
+end)
+AUTO ATTACK NEAREST
+local autoAttack = true
+
+spawn(function()
+    while autoAttack and wait(0.5) do
+        local target = nil
+        local shortestDist = math.huge
+        
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                if dist < shortestDist and dist < 50 then
+                    shortestDist = dist
+                    target = plr
+                end
+            end
+        end
+        
+        if target then
+            -- Fire your attack remote here
+            print("Attacking: " .. target.Name)
+        end
+    end
+end)
+TRACERS (LINES TO PLAYERS)
+local tracers = {}
+
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+        local line = Drawing.new("Line")
+        line.Visible = true
+        line.Color = Color3.fromRGB(255, 0, 0)
+        line.Thickness = 2
+        line.Transparency = 1
+        
+        tracers[plr] = line
+        
+        spawn(function()
+            while plr.Character and wait() do
+                local hrpPos = plr.Character.HumanoidRootPart.Position
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(hrpPos)
+                
+                if onScreen then
+                    line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y)
+                    line.To = Vector2.new(screenPos.X, screenPos.Y)
+                    line.Visible = true
+                else
+                    line.Visible = false
+                end
+            end
+        end)
+    end
+end
+BLOCK/PARRY SPAM
+-- Spam block (change remote to your game's block)
+spawn(function()
+    while wait(0.01) do
+        -- Replace with your game's block remote
+        game:GetService("ReplicatedStorage").Block:FireServer(true)
+    end
+end)
+REMOVE TEXTURES (BETTER FPS)
+-- Remove all textures for FPS boost
+for _, obj in pairs(workspace:GetDescendants()) do
+    if obj:IsA("Texture") or obj:IsA("Decal") then
+        obj:Destroy()
+    end
+end
+ANTI-RAGDOLL
+-- Prevent ragdolling
+humanoid.StateChanged:Connect(function(old, new)
+    if new == Enum.HumanoidStateType.FallingDown or 
+       new == Enum.HumanoidStateType.Ragdoll then
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end)
+WALK ON AIR
+-- Create invisible platform you can walk on
+local airWalk = false
+local platform = Instance.new("Part")
+platform.Size = Vector3.new(10, 0.5, 10)
+platform.Transparency = 1
+platform.Anchored = true
+platform.CanCollide = true
+platform.Parent = workspace
+
+spawn(function()
+    while wait() do
+        if airWalk and hrp then
+            platform.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+        else
+            platform.CFrame = CFrame.new(0, -1000, 0)
+        end
+    end
+end)
+
+-- Toggle with Q
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Q then
+        airWalk = not airWalk
+    end
+end)
+ORBIT PLAYERS
+-- Orbit around a player
+local orbiting = false
+local targetPlayer = nil
+local angle = 0
+local radius = 10
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.R then
+        orbiting = not orbiting
+        if orbiting then
+            targetPlayer = GetNearestPlayer() -- Use the function from before
+        end
+    end
+end)
+
+spawn(function()
+    while wait() do
+        if orbiting and targetPlayer and targetPlayer.Character then
+            angle = angle + 0.1
+            local targetHRP = targetPlayer.Character.HumanoidRootPart
+            local x = targetHRP.Position.X + radius * math.cos(angle)
+            local z = targetHRP.Position.Z + radius * math.sin(angle)
+            hrp.CFrame = CFrame.new(x, targetHRP.Position.Y, z)
+        end
+    end
+end)
+SPAM ALL REMOTES (TESTING)
+-- Fire ALL remotes (use carefully!)
+for _, remote in pairs(game:GetDescendants()) do
+    if remote:IsA("RemoteEvent") then
+        remote:FireServer()
+    elseif remote:IsA("RemoteFunction") then
+        pcall(function()
+            remote:InvokeServer()
+        end)
+    end
+end
+REJOIN SERVER
+-- Rejoin same server
+local TeleportService = game:GetService("TeleportService")
+TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
+SERVER HOP
+-- Join a different server
+local TeleportService = game:GetService("TeleportService")
+TeleportService:Teleport(game.PlaceId, player)
+COPY CHAT MESSAGES
+-- See all chat messages
+game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(data)
+    print(data.FromSpeaker .. ": " .. data.Message)
+end)
+REMOVE JUMP COOLDOWN
+-- Jump instantly without cooldown
+humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
+    if humanoid.JumpPower ~= 50 then
+        humanoid.JumpPower = 50
+    end
+end)
+ANTI-VOID (AUTO RESPAWN)
+-- Respawn if you fall below a certain height
+spawn(function()
+    while wait(0.5) do
+        if hrp and hrp.Position.Y < -100 then
+            hrp.CFrame = CFrame.new(0, 50, 0) -- Teleport up
+        end
+    end
+end)
+CHANGE TIME OF DAY
+-- Make it daytime
+game.Lighting.ClockTime = 12
+
+-- Make it night
+game.Lighting.ClockTime = 0
+
+-- Sunrise
+game.Lighting.ClockTime = 6
+
+-- Sunset
+game.Lighting.ClockTime = 18
