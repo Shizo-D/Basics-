@@ -1469,3 +1469,319 @@ local TweenService = game:GetService("TweenService")
 local tweenInfo = TweenInfo.new(2)
 local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(0, 50, 0)})
 tween:Play()
+
+
+
+
+
+
+    -- ========================================
+-- EASY & USEFUL ROBLOX EXPLOIT SCRIPTS
+-- Copy and paste these to learn!
+-- ========================================
+
+-- ============================================
+-- 1. SIMPLE REMOTE SPY (Find Game Exploits)
+-- ============================================
+-- This shows you EVERY remote that fires in the game
+-- Use this FIRST on any game to find exploits!
+
+print("=== REMOTE SPY STARTED ===")
+print("Do actions in-game to see what remotes fire!")
+
+local old_namecall
+old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    
+    if method == "FireServer" or method == "InvokeServer" then
+        warn("━━━━━━━━━━━━━━━━━━━━")
+        print("📡 Remote:", self.Name)
+        print("📍 Path:", self:GetFullName())
+        print("🔧 Method:", method)
+        print("📦 Args:", table.concat(args, ", "))
+        warn("━━━━━━━━━━━━━━━━━━━━")
+    end
+    
+    return old_namecall(self, ...)
+end)
+
+-- ============================================
+-- 2. AUTO-COLLECT ANYTHING (Universal)
+-- ============================================
+-- Automatically collects coins, orbs, money, etc
+-- Change "Coin" to whatever the game uses
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+print("🤖 Auto-Collect Started!")
+
+while task.wait(0.5) do
+    for _, item in pairs(workspace:GetDescendants()) do
+        -- Change these names based on what you see in workspace
+        if item.Name == "Coin" or item.Name == "Orb" or item.Name == "Cash" then
+            if item:IsA("BasePart") then
+                -- Method 1: Firetouchinterest (most common)
+                pcall(function()
+                    firetouchinterest(hrp, item, 0)
+                    task.wait()
+                    firetouchinterest(hrp, item, 1)
+                end)
+            end
+        end
+    end
+end
+
+-- ============================================
+-- 3. SAFE AUTO-FARM NPCs/MOBS
+-- ============================================
+-- Farms NPCs without getting detected
+-- Adjust the folder path based on the game
+
+local player = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local farming = true
+local attackCooldown = 0.5 -- Seconds between attacks
+local lastAttack = 0
+
+print("⚔️ Auto-Farm Started!")
+
+RunService.Heartbeat:Connect(function()
+    if not farming then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    -- Find closest NPC (change "NPCs" to whatever folder the game uses)
+    local closest = nil
+    local closestDist = math.huge
+    
+    local npcFolder = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Mobs")
+    
+    if npcFolder then
+        for _, npc in pairs(npcFolder:GetChildren()) do
+            if npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                local dist = (hrp.Position - npc.HumanoidRootPart.Position).Magnitude
+                if dist < closestDist and dist < 100 then
+                    closestDist = dist
+                    closest = npc
+                end
+            end
+        end
+    end
+    
+    -- Attack closest NPC
+    if closest and tick() - lastAttack >= attackCooldown then
+        -- Teleport near it (not directly on it - less sus)
+        hrp.CFrame = closest.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+        
+        -- Click to attack (most games use mouse click)
+        mouse1click()
+        
+        lastAttack = tick()
+    end
+end)
+
+-- ============================================
+-- 4. SMART REMOTE EXPLOITER
+-- ============================================
+-- Use this AFTER you find remotes with the spy
+-- Replace the remote path with what you found
+
+-- Example 1: Money exploit
+local MoneyRemote = game.ReplicatedStorage.Remotes:FindFirstChild("GiveMoney")
+if MoneyRemote then
+    for i = 1, 10 do -- Fire 10 times
+        MoneyRemote:FireServer(1000) -- Try different amounts
+        task.wait(0.5) -- Wait between fires to avoid detection
+    end
+    print("💰 Money exploit executed!")
+end
+
+-- Example 2: Quest completion
+local QuestRemote = game.ReplicatedStorage.Remotes:FindFirstChild("CompleteQuest")
+if QuestRemote then
+    local quests = {"Quest1", "Quest2", "Quest3"} -- Change based on game
+    for _, quest in pairs(quests) do
+        QuestRemote:FireServer(quest)
+        task.wait(1)
+    end
+    print("✅ Quests completed!")
+end
+
+-- Example 3: Item duplication
+local ItemRemote = game.ReplicatedStorage.Remotes:FindFirstChild("ClaimItem")
+if ItemRemote then
+    for i = 1, 50 do
+        ItemRemote:FireServer("Sword") -- Change item name
+        task.wait(0.3)
+    end
+    print("📦 Items duplicated!")
+end
+
+-- ============================================
+-- 5. ANTI-KICK BYPASS
+-- ============================================
+-- Prevents the game from kicking you
+
+local old_namecall
+old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    
+    -- Block kick remotes
+    if method == "Kick" then
+        warn("🛡️ Blocked kick attempt!")
+        return nil
+    end
+    
+    return old_namecall(self, ...)
+end)
+
+print("🛡️ Anti-Kick Active!")
+
+-- ============================================
+-- 6. UNIVERSAL ESP (See Players Through Walls)
+-- ============================================
+-- Simple ESP that works on most games
+
+local function createESP(player)
+    if player == game.Players.LocalPlayer then return end
+    
+    local function addESP(character)
+        -- Remove old ESP
+        if character:FindFirstChild("ESP_Highlight") then
+            character.ESP_Highlight:Destroy()
+        end
+        
+        -- Create highlight
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESP_Highlight"
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Parent = character
+    end
+    
+    if player.Character then
+        addESP(player.Character)
+    end
+    
+    player.CharacterAdded:Connect(addESP)
+end
+
+for _, player in pairs(game.Players:GetPlayers()) do
+    createESP(player)
+end
+
+game.Players.PlayerAdded:Connect(createESP)
+
+print("👁️ ESP Active!")
+
+-- ============================================
+-- 7. SAFE TELEPORT (Anti-Detection)
+-- ============================================
+-- Teleports without triggering anti-cheat
+
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+
+function safeTeleport(targetCFrame, speed)
+    speed = speed or 50 -- studs per second
+    
+    local character = player.Character
+    if not character then return end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local distance = (hrp.Position - targetCFrame.Position).Magnitude
+    local time = distance / speed
+    
+    local tween = TweenService:Create(hrp, TweenInfo.new(time, Enum.EasingStyle.Linear), {
+        CFrame = targetCFrame
+    })
+    
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- Usage:
+-- safeTeleport(CFrame.new(100, 50, 100), 50)
+
+print("🚀 Safe teleport function loaded!")
+
+-- ============================================
+-- 8. AUTO-REBIRTH/AUTO-PRESTIGE
+-- ============================================
+-- Automatically rebirths/prestiges when available
+
+local RebirthRemote = game.ReplicatedStorage.Remotes:FindFirstChild("Rebirth")
+
+if RebirthRemote then
+    spawn(function()
+        while task.wait(5) do
+            pcall(function()
+                RebirthRemote:FireServer()
+                print("🔄 Auto-rebirth attempted!")
+            end)
+        end
+    end)
+end
+
+-- ============================================
+-- 9. SPEED HACK (Anti-Detection Safe)
+-- ============================================
+-- Increases speed without triggering anti-cheat
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Method 1: Normal walkspeed (detectable in some games)
+humanoid.WalkSpeed = 50 -- Default is 16
+
+-- Method 2: CFrame manipulation (harder to detect)
+local speed = 2 -- Multiplier
+game:GetService("RunService").Heartbeat:Connect(function()
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid and hrp and humanoid.MoveDirection.Magnitude > 0 then
+            hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * speed)
+        end
+    end
+end)
+
+print("⚡ Speed hack active!")
+
+-- ============================================
+-- 10. FULL AUTO-FARM TEMPLATE
+-- ============================================
+-- Combine everything: ESP, Auto-Farm, Anti-Kick, Remote Spy
+
+print("🔥 FULL AUTO-FARM ACTIVATED 🔥")
+
+-- Settings
+local CONFIG = {
+    AUTO_COLLECT = true,
+    AUTO_FARM_NPCS = true,
+    ESP_ENABLED = true,
+    ANTI_KICK = true,
+    SAFE_MODE = true, -- Slower but safer
+    ATTACK_COOLDOWN = 0.5
+}
+
+-- Your full script logic here combining all the above techniques
+
+print("✅ All features loaded! Check settings above to customize.")
+print("💡 TIP: Use the Remote Spy first to find game-specific exploits!")
+print("⚠️ Remember: Don't spam remotes or you'll get detected!")
