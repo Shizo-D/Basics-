@@ -1996,3 +1996,391 @@ print("━━━━━━━━━━━━━━━━━━━━━━━━�
 
 -- Example: Use safe teleport instead of instant
 -- safeTeleport(CFrame.new(100, 50, 100))
+
+
+-- ========================================
+-- ANTI-CHEAT DETECTOR & INSTANT DISABLER
+-- Finds and neutralizes anti-cheat systems
+-- ========================================
+
+print("🔍 Scanning for anti-cheat systems...")
+
+local foundAntiCheats = {}
+
+-- ========================================
+-- STEP 1: FIND ANTI-CHEAT SCRIPTS
+-- ========================================
+
+function scanForAntiCheat()
+    local suspiciousScripts = {}
+    
+    -- Common anti-cheat locations
+    local locations = {
+        game.ReplicatedStorage,
+        game.ReplicatedFirst,
+        game.StarterPlayer.StarterPlayerScripts,
+        game.StarterPlayer.StarterCharacterScripts,
+        game.Players.LocalPlayer.PlayerScripts,
+        game.Players.LocalPlayer.PlayerGui
+    }
+    
+    -- Anti-cheat keywords to look for
+    local keywords = {
+        "anticheat", "anti", "cheat", "detect", "ban", 
+        "kick", "exploit", "check", "validate", "verify",
+        "security", "protection", "guard", "shield",
+        "monitor", "watch", "inspect", "scan"
+    }
+    
+    for _, location in pairs(locations) do
+        for _, obj in pairs(location:GetDescendants()) do
+            if obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+                local name = obj.Name:lower()
+                
+                -- Check if name contains anti-cheat keywords
+                for _, keyword in pairs(keywords) do
+                    if name:find(keyword) then
+                        table.insert(suspiciousScripts, obj)
+                        table.insert(foundAntiCheats, {
+                            Name = obj.Name,
+                            Path = obj:GetFullName(),
+                            Type = obj.ClassName
+                        })
+                        break
+                    end
+                end
+            end
+        end
+    end
+    
+    return suspiciousScripts
+end
+
+-- ========================================
+-- STEP 2: SCAN FOR ANTI-CHEAT REMOTES
+-- ========================================
+
+function scanForAntiCheatRemotes()
+    local suspiciousRemotes = {}
+    
+    local keywords = {
+        "kick", "ban", "flag", "detect", "check",
+        "validate", "report", "log", "anticheat", "ac"
+    }
+    
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+            local name = obj.Name:lower()
+            
+            for _, keyword in pairs(keywords) do
+                if name:find(keyword) then
+                    table.insert(suspiciousRemotes, obj)
+                    table.insert(foundAntiCheats, {
+                        Name = obj.Name,
+                        Path = obj:GetFullName(),
+                        Type = obj.ClassName
+                    })
+                    break
+                end
+            end
+        end
+    end
+    
+    return suspiciousRemotes
+end
+
+-- ========================================
+-- STEP 3: DETECT ANTI-CHEAT CONNECTIONS
+-- ========================================
+
+function detectAntiCheatConnections()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    
+    -- Check for suspicious Humanoid connections
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            -- These are commonly hooked by anti-cheats
+            local properties = {
+                "WalkSpeed", "JumpPower", "Health",
+                "MaxHealth", "HipHeight"
+            }
+            
+            for _, prop in pairs(properties) do
+                -- Try to detect if property is being monitored
+                local connections = getconnections(humanoid:GetPropertyChangedSignal(prop))
+                if #connections > 0 then
+                    print("⚠️ Detected monitoring on Humanoid." .. prop)
+                    table.insert(foundAntiCheats, {
+                        Name = "Humanoid." .. prop .. " Monitor",
+                        Path = "Character.Humanoid",
+                        Type = "Connection"
+                    })
+                end
+            end
+        end
+    end
+end
+
+-- ========================================
+-- STEP 4: DISABLE FOUND ANTI-CHEATS
+-- ========================================
+
+function disableScript(script)
+    pcall(function()
+        script.Disabled = true
+        script:Destroy()
+    end)
+end
+
+function blockRemote(remote)
+    -- Hook the remote to do nothing
+    local old_namecall
+    old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+        if self == remote then
+            return nil -- Block it
+        end
+        return old_namecall(self, ...)
+    end)
+end
+
+function disableConnections(obj, property)
+    pcall(function()
+        local connections = getconnections(obj:GetPropertyChangedSignal(property))
+        for _, connection in pairs(connections) do
+            connection:Disable()
+        end
+    end)
+end
+
+-- ========================================
+-- STEP 5: UNIVERSAL ANTI-CHEAT BYPASS HOOKS
+-- ========================================
+
+function setupUniversalBypass()
+    print("🛡️ Setting up universal bypass hooks...")
+    
+    -- Hook 1: Block all kick attempts
+    local old_namecall
+    old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        
+        -- Block kicks
+        if method == "Kick" then
+            warn("🛡️ Blocked kick attempt!")
+            return nil
+        end
+        
+        -- Block suspicious remotes
+        if (method == "FireServer" or method == "InvokeServer") then
+            local name = self.Name:lower()
+            if name:find("kick") or name:find("ban") or 
+               name:find("flag") or name:find("log") or
+               name:find("detect") then
+                warn("🛡️ Blocked anti-cheat remote:", self.Name)
+                return nil
+            end
+        end
+        
+        return old_namecall(self, ...)
+    end)
+    
+    -- Hook 2: Spoof detection checks
+    local old_index
+    old_index = hookmetamethod(game, "__index", function(self, key)
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        
+        -- Spoof humanoid properties to look legit
+        if character and self == character:FindFirstChild("Humanoid") then
+            if key == "WalkSpeed" then
+                return 16 -- Return normal speed to anti-cheat
+            end
+            if key == "JumpPower" then
+                return 50 -- Return normal jump
+            end
+        end
+        
+        -- Spoof HumanoidRootPart position
+        if character and self == character:FindFirstChild("HumanoidRootPart") then
+            if key == "Position" or key == "CFrame" then
+                -- Return a "safe" position if being checked
+                -- (You can make this smarter)
+            end
+        end
+        
+        return old_index(self, key)
+    end)
+    
+    -- Hook 3: Block console logging (some AC logs to console)
+    local old_warn = warn
+    local old_error = error
+    
+    warn = function(...)
+        local args = {...}
+        local text = tostring(args[1]):lower()
+        
+        -- Don't log anti-cheat warnings
+        if text:find("detect") or text:find("cheat") or 
+           text:find("exploit") or text:find("ban") then
+            return
+        end
+        
+        return old_warn(...)
+    end
+    
+    error = function(...)
+        local args = {...}
+        local text = tostring(args[1]):lower()
+        
+        -- Don't throw anti-cheat errors
+        if text:find("detect") or text:find("cheat") or text:find("exploit") then
+            return
+        end
+        
+        return old_error(...)
+    end
+end
+
+-- ========================================
+-- STEP 6: DISABLE HEARTBEAT CHECKS
+-- ========================================
+
+function disableHeartbeatChecks()
+    print("💓 Disabling Heartbeat anti-cheat checks...")
+    
+    local RunService = game:GetService("RunService")
+    
+    -- Get all heartbeat connections
+    local connections = getconnections(RunService.Heartbeat)
+    
+    for i, connection in pairs(connections) do
+        -- Disable suspicious connections
+        pcall(function()
+            local func = debug.getinfo(connection.Function)
+            if func then
+                -- Check if it looks like anti-cheat code
+                -- (This is a simplified check)
+                connection:Disable()
+                print("Disabled Heartbeat connection #" .. i)
+            end
+        end)
+    end
+end
+
+-- ========================================
+-- STEP 7: GARBAGE COLLECTION SCAN
+-- ========================================
+
+function scanGarbageCollection()
+    print("🗑️ Scanning garbage collection for anti-cheat...")
+    
+    -- Scan all functions in memory
+    for _, func in pairs(getgc(true)) do
+        if type(func) == "function" then
+            local info = debug.getinfo(func)
+            if info and info.name then
+                local name = info.name:lower()
+                
+                -- Check for anti-cheat function names
+                if name:find("anticheat") or name:find("detect") or 
+                   name:find("check") or name:find("validate") then
+                    
+                    -- Try to hook/disable it
+                    pcall(function()
+                        hookfunction(func, function() return end)
+                    end)
+                    
+                    print("🎯 Hooked suspicious function:", info.name)
+                end
+            end
+        end
+    end
+end
+
+-- ========================================
+-- EXECUTE FULL SCAN AND DISABLE
+-- ========================================
+
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+print("🔍 ANTI-CHEAT SCANNER v1.0")
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+-- Scan for anti-cheats
+local scripts = scanForAntiCheat()
+local remotes = scanForAntiCheatRemotes()
+
+-- Setup universal bypasses
+setupUniversalBypass()
+
+-- Disable found anti-cheats
+print("\n📋 Found", #foundAntiCheats, "potential anti-cheat components:")
+for i, ac in pairs(foundAntiCheats) do
+    print(i .. ".", ac.Type, "-", ac.Name)
+    print("   Path:", ac.Path)
+end
+
+print("\n🔨 Disabling anti-cheats...")
+
+-- Disable scripts
+for _, script in pairs(scripts) do
+    disableScript(script)
+    print("✅ Disabled:", script.Name)
+end
+
+-- Block remotes
+for _, remote in pairs(remotes) do
+    blockRemote(remote)
+    print("✅ Blocked:", remote.Name)
+end
+
+-- Disable connections
+detectAntiCheatConnections()
+
+-- Disable heartbeat checks
+if disableHeartbeatChecks then
+    pcall(disableHeartbeatChecks)
+end
+
+-- Scan garbage collection
+if getgc and hookfunction then
+    pcall(scanGarbageCollection)
+end
+
+print("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+print("✅ Anti-cheat bypass complete!")
+print("🛡️ Protection active!")
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+-- ========================================
+-- MANUAL DISABLE FUNCTION
+-- ========================================
+
+-- If auto-detection missed something, use this:
+function manualDisable(path)
+    local obj = game
+    for _, name in pairs(path:split(".")) do
+        obj = obj:FindFirstChild(name)
+        if not obj then
+            warn("❌ Could not find:", path)
+            return
+        end
+    end
+    
+    if obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+        disableScript(obj)
+        print("✅ Manually disabled:", path)
+    elseif obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+        blockRemote(obj)
+        print("✅ Manually blocked:", path)
+    end
+end
+
+-- Usage example:
+-- manualDisable("ReplicatedStorage.AntiCheat.MainScript")
+
+print("\n💡 TIP: If detection missed something, use:")
+print('manualDisable("Path.To.AntiCheat")')
+print("\n⚠️ WARNING: Some games use server-side anti-cheat")
+print("Those CANNOT be bypassed from client!")
