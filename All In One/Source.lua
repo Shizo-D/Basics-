@@ -2384,3 +2384,366 @@ print("\n💡 TIP: If detection missed something, use:")
 print('manualDisable("Path.To.AntiCheat")')
 print("\n⚠️ WARNING: Some games use server-side anti-cheat")
 print("Those CANNOT be bypassed from client!")
+
+
+-- ========================================
+-- UNDETECTABLE GUI METHODS
+-- Bypass GUI detection and auto-kicks
+-- ========================================
+
+print("🕵️ Loading stealth GUI system...")
+
+-- ========================================
+-- METHOD 1: Hide GUI from Detection
+-- ========================================
+
+function createStealthGui()
+    local ScreenGui = Instance.new("ScreenGui")
+    
+    -- CRITICAL: These settings hide from anti-cheat
+    ScreenGui.Name = game:GetService("HttpService"):GenerateGUID(false) -- Random name
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.IgnoreGuiInset = true
+    
+    -- Method 1: Use gethui() if available (best)
+    if gethui then
+        ScreenGui.Parent = gethui()
+        print("✅ GUI hidden in gethui()")
+        
+    -- Method 2: Use syn.protect_gui() for Synapse
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(ScreenGui)
+        ScreenGui.Parent = game.CoreGui
+        print("✅ GUI protected with Synapse")
+        
+    -- Method 3: Use protect_gui() for other executors
+    elseif protect_gui then
+        protect_gui(ScreenGui)
+        ScreenGui.Parent = game.CoreGui
+        print("✅ GUI protected")
+        
+    -- Method 4: Hide in CoreGui (less safe but works)
+    else
+        ScreenGui.Parent = game.CoreGui
+        print("⚠️ GUI in CoreGui (may be detectable)")
+    end
+    
+    return ScreenGui
+end
+
+-- ========================================
+-- METHOD 2: Detect GUI Scanners
+-- ========================================
+
+function blockGuiScanners()
+    print("🛡️ Blocking GUI scanners...")
+    
+    -- Hook __index to hide GUI from detection
+    local old_index
+    old_index = hookmetamethod(game, "__index", function(self, key)
+        -- If anti-cheat tries to scan PlayerGui or CoreGui
+        if key == "PlayerGui" or key == "CoreGui" then
+            -- Check who's asking
+            local caller = getcallingscript()
+            
+            if caller then
+                local name = caller.Name:lower()
+                -- If it's anti-cheat, return empty
+                if name:find("anti") or name:find("detect") or 
+                   name:find("check") or name:find("security") then
+                    warn("🛡️ Blocked GUI scan from:", caller.Name)
+                    return Instance.new("Folder") -- Return fake empty container
+                end
+            end
+        end
+        
+        return old_index(self, key)
+    end)
+    
+    -- Hook GetChildren/GetDescendants to hide GUI
+    local old_namecall
+    old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        
+        -- If scanning for GUIs
+        if (method == "GetChildren" or method == "GetDescendants") then
+            local caller = getcallingscript()
+            
+            if caller then
+                local name = caller.Name:lower()
+                if name:find("anti") or name:find("detect") or name:find("check") then
+                    -- Return filtered list without our GUI
+                    local result = old_namecall(self, ...)
+                    local filtered = {}
+                    
+                    for _, obj in pairs(result) do
+                        -- Don't include ScreenGuis
+                        if not obj:IsA("ScreenGui") then
+                            table.insert(filtered, obj)
+                        end
+                    end
+                    
+                    warn("🛡️ Filtered GUI scan results")
+                    return filtered
+                end
+            end
+        end
+        
+        return old_namecall(self, ...)
+    end)
+end
+
+-- ========================================
+-- METHOD 3: Invisible GUI (No Detection)
+-- ========================================
+
+function createInvisibleGui()
+    -- Create GUI that doesn't show up in hierarchy scans
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "\0" -- Null character (invisible in scans)
+    ScreenGui.ResetOnSpawn = false
+    
+    -- Hide from typical scans
+    if gethui then
+        ScreenGui.Parent = gethui()
+    else
+        ScreenGui.Parent = game:GetService("CoreGui")
+    end
+    
+    -- Make it invisible to :GetChildren() scans
+    pcall(function()
+        local mt = getrawmetatable(ScreenGui)
+        setreadonly(mt, false)
+        
+        local old_parent = mt.__index.Parent
+        mt.__index.Parent = function(self)
+            -- Return fake parent to anti-cheat
+            return game
+        end
+        
+        setreadonly(mt, true)
+    end)
+    
+    return ScreenGui
+end
+
+-- ========================================
+-- METHOD 4: Delay GUI Creation
+-- ========================================
+
+function delayedGuiCreation()
+    -- Some anti-cheats scan on join - wait for them to finish
+    print("⏳ Waiting for anti-cheat scan to finish...")
+    
+    task.wait(5) -- Wait 5 seconds after join
+    
+    print("✅ Creating GUI after scan window")
+    return createStealthGui()
+end
+
+-- ========================================
+-- METHOD 5: Detect What's Kicking You
+-- ========================================
+
+function detectKickReason()
+    print("🔍 Monitoring for kick attempts...")
+    
+    local kickReasons = {}
+    
+    -- Hook kick function
+    local old_namecall
+    old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        if method == "Kick" then
+            local reason = args[1] or "No reason given"
+            warn("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            warn("🚫 KICK DETECTED!")
+            warn("Reason:", reason)
+            warn("Called by:", getcallingscript())
+            warn("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            
+            table.insert(kickReasons, {
+                reason = reason,
+                script = getcallingscript(),
+                time = tick()
+            })
+            
+            -- Block the kick
+            return nil
+        end
+        
+        return old_namecall(self, ...)
+    end)
+    
+    return kickReasons
+end
+
+-- ========================================
+-- METHOD 6: Minimal GUI (Less Detectable)
+-- ========================================
+
+function createMinimalGui()
+    -- Instead of full GUI library, create simple buttons
+    local ScreenGui = createStealthGui()
+    
+    -- Create a simple frame
+    local Frame = Instance.new("Frame")
+    Frame.Name = game:GetService("HttpService"):GenerateGUID(false)
+    Frame.Size = UDim2.new(0, 200, 0, 300)
+    Frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Frame.BorderSizePixel = 0
+    Frame.Active = true
+    Frame.Draggable = true
+    Frame.Parent = ScreenGui
+    
+    -- Add UICorner for style
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Frame
+    
+    -- Title
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, 40)
+    Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Title.BorderSizePixel = 0
+    Title.Text = "Stealth GUI"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 18
+    Title.Font = Enum.Font.GothamBold
+    Title.Parent = Frame
+    
+    -- Title corner
+    local TitleCorner = Instance.new("UICorner")
+    TitleCorner.CornerRadius = UDim.new(0, 8)
+    TitleCorner.Parent = Title
+    
+    -- Container for buttons
+    local Container = Instance.new("ScrollingFrame")
+    Container.Size = UDim2.new(1, -20, 1, -60)
+    Container.Position = UDim2.new(0, 10, 0, 50)
+    Container.BackgroundTransparency = 1
+    Container.BorderSizePixel = 0
+    Container.ScrollBarThickness = 4
+    Container.Parent = Frame
+    
+    -- Add list layout
+    local List = Instance.new("UIListLayout")
+    List.Padding = UDim.new(0, 5)
+    List.Parent = Container
+    
+    return ScreenGui, Container
+end
+
+-- ========================================
+-- METHOD 7: Remote-Based Detection Block
+-- ========================================
+
+function blockGuiDetectionRemotes()
+    print("🔒 Blocking GUI detection remotes...")
+    
+    local old_namecall
+    old_namecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        if method == "FireServer" or method == "InvokeServer" then
+            -- Check if it's sending GUI detection data
+            for _, arg in pairs(args) do
+                if type(arg) == "table" then
+                    -- Check if table contains GUI references
+                    for k, v in pairs(arg) do
+                        if type(v) == "userdata" and v:IsA("ScreenGui") then
+                            warn("🛡️ Blocked GUI detection remote:", self.Name)
+                            return nil
+                        end
+                    end
+                end
+            end
+        end
+        
+        return old_namecall(self, ...)
+    end)
+end
+
+-- ========================================
+-- FULL PROTECTION SETUP
+-- ========================================
+
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+print("🕵️ STEALTH GUI SYSTEM v1.0")
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+-- Enable all protections
+blockGuiScanners()
+blockGuiDetectionRemotes()
+local kickReasons = detectKickReason()
+
+-- Wait a bit before creating GUI
+task.wait(3)
+
+-- Create protected GUI
+local gui, container = createMinimalGui()
+
+print("✅ Stealth GUI created!")
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+-- ========================================
+-- EXAMPLE: Add buttons to GUI
+-- ========================================
+
+function addButton(text, callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, 0, 0, 35)
+    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Button.BorderSizePixel = 0
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+    Button.Font = Enum.Font.Gotham
+    Button.Parent = container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(callback)
+    
+    return Button
+end
+
+-- Add example buttons
+addButton("Speed Hack", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 100
+            print("✅ Speed enabled!")
+        end
+    end
+end)
+
+addButton("Fly", function()
+    print("✅ Fly enabled!")
+    -- Add your fly code here
+end)
+
+addButton("ESP", function()
+    print("✅ ESP enabled!")
+    -- Add your ESP code here
+end)
+
+addButton("Close GUI", function()
+    gui:Destroy()
+    print("❌ GUI closed")
+end)
+
+print("\n💡 TIP: If you still get kicked, check output for kick reason!")
+print("🔍 Use the kick detector to see what's triggering it")
+print("\n⚠️ Some games have server-side GUI detection")
+print("Those games scan for executor functions, not the GUI itself")
